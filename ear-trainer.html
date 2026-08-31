@@ -140,7 +140,7 @@
   }
 
   /* ---- DRILL MODE ---- */
-  #drill-panel { display: block; }
+  #drill-panel { display: none; }
   #quiz-panel { display: none; }
   #stats-panel { display: none; }
 
@@ -336,7 +336,7 @@
   }
 
   /* ---- TUNER (TEMPORARY — cello tuning aid, safe to delete this block) ---- */
-  #tuner-panel { display: none; }
+  #tuner-panel { display: block; }
   .tuner-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -616,7 +616,6 @@
   /* Theory sidebar */
   .theory-block {
     width: 100%;
-    max-width: 640px;
     margin-top: 16px;
     border: 1px solid var(--border);
     border-radius: 4px;
@@ -907,12 +906,12 @@
 </header>
 
 <div class="tabs">
-  <button class="tab active" onclick="switchTab('drill')">Drill</button>
-  <button class="tab" onclick="switchTab('quiz')">Quiz</button>
-  <button class="tab" onclick="switchTab('stats')">Stats</button>
-  <button class="tab" onclick="switchTab('tuner')">Tuner</button>
+  <button class="tab active" onclick="switchTab('tuner')">Tuner</button>
   <button class="tab" onclick="switchTab('metronome')">Metro</button>
   <button class="tab" onclick="switchTab('scales')">Scales</button>
+  <button class="tab" onclick="switchTab('drill')">Drill</button>
+  <button class="tab" onclick="switchTab('quiz')">Quiz</button>
+  <button class="tab" onclick="switchTab('stats')">Stats</button>
 </div>
 
 <div class="controls-row">
@@ -968,6 +967,24 @@
         <div class="pitch-detected" id="pitch-detected">—</div>
       </div>
       <div class="mic-label mt8" id="mic-label">Hum or sing to check your internal pitch</div>
+    </div>
+
+    <div class="theory-block" style="margin-top:16px;width:100%">
+      <button class="theory-toggle" onclick="toggleTheory()">
+        <span>Why does E# = F? (and other lies music tells you)</span>
+        <span id="theory-arrow">+</span>
+      </button>
+      <div class="theory-content" id="theory-content">
+        <p><strong>The short answer:</strong> Western music notation was invented before standardized tuning, and we've been stuck with it ever since.</p>
+        <br>
+        <p>The piano has 12 notes per octave. But music notation was built around 7 letter names (A B C D E F G). When you need notes between the letters, you use sharps (#) and flats (♭). The result: some notes have two names.</p>
+        <br>
+        <p><strong>E# and F are the same key on the piano.</strong> So are B# and C, C♭ and B, F♭ and E. These are called <strong>enharmonic equivalents</strong> — same pitch, different name.</p>
+        <br>
+        <p>Why does E# exist at all? Because in certain keys (like F# major), every note in the scale needs its own letter. The 7th note is E#, not F — even though they sound identical — because you can't have two F's and zero E's in a scale.</p>
+        <br>
+        <p><strong>Minor scales:</strong> A minor scale is like a major scale but with a darker mood. The key difference: the 3rd, 6th, and 7th notes are lowered by a half step. C major = C D E F G A B. C minor = C D E♭ F G A♭ B♭. That flatted 3rd is what gives minor its characteristic "sad" sound.</p>
+      </div>
     </div>
   </div>
 
@@ -1170,24 +1187,6 @@
 
 </div>
 
-<!-- Theory block -->
-<div class="theory-block">
-  <button class="theory-toggle" onclick="toggleTheory()">
-    <span>Why does E# = F? (and other lies music tells you)</span>
-    <span id="theory-arrow">+</span>
-  </button>
-  <div class="theory-content" id="theory-content">
-    <p><strong>The short answer:</strong> Western music notation was invented before standardized tuning, and we've been stuck with it ever since.</p>
-    <br>
-    <p>The piano has 12 notes per octave. But music notation was built around 7 letter names (A B C D E F G). When you need notes between the letters, you use sharps (#) and flats (♭). The result: some notes have two names.</p>
-    <br>
-    <p><strong>E# and F are the same key on the piano.</strong> So are B# and C, C♭ and B, F♭ and E. These are called <strong>enharmonic equivalents</strong> — same pitch, different name.</p>
-    <br>
-    <p>Why does E# exist at all? Because in certain keys (like F# major), every note in the scale needs its own letter. The 7th note is E#, not F — even though they sound identical — because you can't have two F's and zero E's in a scale.</p>
-    <br>
-    <p><strong>Minor scales:</strong> A minor scale is like a major scale but with a darker mood. The key difference: the 3rd, 6th, and 7th notes are lowered by a half step. C major = C D E F G A B. C minor = C D E♭ F G A♭ B♭. That flatted 3rd is what gives minor its characteristic "sad" sound.</p>
-  </div>
-</div>
 
 <script type="module">
 // ===== AUDIO ENGINE =====
@@ -1362,7 +1361,7 @@ function renderStats() {
 
 
 // ===== TABS =====
-const ALL_TABS = ['drill','quiz','stats','tuner','metronome','scales'];
+const ALL_TABS = ['tuner','metronome','scales','drill','quiz','stats'];
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach((t,i) => {
     t.classList.toggle('active', ALL_TABS[i] === tab);
@@ -1947,8 +1946,30 @@ function renderTunerFree(freq, noteEl, hzEl, needleEl, verdictEl, centsEl) {
 
 function playTunerRef() {
   const ctx = getAudioCtx();
-  playNote(tunerTarget, ctx.currentTime + 0.05, 2.5);
-  tunerMuteUntil = performance.now() + 3200; // ignore mic while it rings out
+  initSamples();
+  const now = ctx.currentTime + 0.05;
+  const boost = ctx.createGain();
+  boost.gain.value = 4.0;
+  boost.connect(ctx.destination);
+  const src = instrument === 'cello' && samplesReady.cello ? sampledCello
+            : samplesReady.piano ? sampledPiano : null;
+  if (src) {
+    src.start({ note: tunerTarget, velocity: 127, duration: 3.0, destination: boost });
+  } else {
+    const freq = noteToFreq(tunerTarget);
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(0.5, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 3.0);
+    osc.connect(g);
+    g.connect(boost);
+    osc.start(now);
+    osc.stop(now + 3.0);
+  }
+  tunerMuteUntil = performance.now() + 3800;
   if (tunerActive) {
     document.getElementById('tuner-verdict').textContent = 'Playing reference…';
     document.getElementById('tuner-verdict').className = 'tuner-verdict';
