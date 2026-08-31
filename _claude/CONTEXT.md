@@ -1,54 +1,59 @@
-# Project: [Project Name]
+# Project: Pitch Lab
 
-**Repo:** https://github.com/[username]/[repo-name]
-**Deploy:** [URL or "not deployed"]
-**Stack:** [e.g. Vanilla JS / React / Node / Python / etc.]
+**Repo:** https://github.com/benjaminboughton/intonation_web_app
+**Deploy:** Not deployed (local file)
+**Stack:** Vanilla JS — single self-contained HTML file, Web Audio API, localStorage
 
 ---
 
 ## What This Is
 
-[2–3 sentences. What the project does and who it's for.]
+A custom ear training web app for rebuilding pitch intuition. Built for a user with functional tone deafness who played cello. Three-tier roadmap from basic pitch discrimination through interval recognition to real-world musical application.
 
 ---
 
 ## Current State
 
 ### Working
-- [ ] [Feature or component that's complete]
+- [x] Pitch discrimination trainer (same/higher/lower on note pairs)
+- [x] Instrument toggle (Piano / Cello synthesis)
+- [x] Playback modes (Melodic sequential / Harmonic simultaneous)
+- [x] Drill mode (endless, immediate feedback, note names revealed)
+- [x] Quiz mode (10-question scored rounds with dot tracker)
+- [x] Stats tab (cumulative per-pair accuracy, color-coded, localStorage)
+- [x] Mic input (real-time pitch detection via autocorrelation)
+- [x] Session timer (5-minute countdown)
+- [x] Theory drawer (enharmonic equivalents, minor scale basics)
 
 ### In Progress
-- [ ] [What's actively being worked on]
+- [ ] Nothing active — Tier I is feature-complete
 
-### Broken / Known Issues
-- [ ] [Bugs or blockers]
-
----
-
-## Active Goal This Session
-
-[One clear sentence about what you're trying to accomplish today.]
+### Known Limitations
+- [ ] Note pair generation is fully random — no adaptive difficulty
+- [ ] Melodic/harmonic split is 50/50 random — not configurable
+- [ ] Quiz is always 10 questions — not configurable
+- [ ] No spaced repetition logic
+- [ ] Mic pitch detection needs quiet environment (no noise filtering)
+- [ ] No Tier II content yet
 
 ---
 
 ## File Map
 
-> Only non-obvious files listed here. Skip anything self-explanatory.
-
 | File | Purpose |
 |------|---------|
-| `src/[file]` | [What it does] |
-| `public/[file]` | [What it does] |
+| `ear-trainer.html` | Full Tier I app — audio engine, UI, stats, mic input, all self-contained |
+| `transition.md` | Session handoff context document |
 
 ---
 
 ## Do Not Touch
 
-- [File, pattern, or decision that should not be changed]
-- [Reason why]
+- The single-file architecture — don't split into multiple files without explicit discussion
+- localStorage key `pitchlab-stats` — changing it would wipe user progress
 
 ---
 
 ## Last Updated
 
-[YYYY-MM-DD] — [one line summary of what changed]
+2026-04-19 — Populated from transition.md, replacing template scaffolding
